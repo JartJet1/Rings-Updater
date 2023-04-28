@@ -250,7 +250,7 @@ while True:
         response = None
         while response is None:
             try:
-                response = requests.post('https://apporsite.com/elitebase/bodies.php', data=json_data, headers=headers, timeout=300)
+                response = requests.post('https://secrectURL', data=json_data, headers=headers, timeout=300)
                 break
             except requests.exceptions.RequestException as e:
                 if isinstance(e, requests.exceptions.ConnectionError) or isinstance(e, ConnectionResetError):
@@ -275,7 +275,7 @@ while True:
             response = None
             while response is None:
                 try:
-                    response = requests.post('https://apporsite.com/elitebase/bodies.php', data=json_data, headers=headers, timeout=300)
+                    response = requests.post('https://secrectURL', data=json_data, headers=headers, timeout=300)
                     break
                 except requests.exceptions.RequestException as e:
                     if isinstance(e, requests.exceptions.ConnectionError) or isinstance(e, ConnectionResetError):
