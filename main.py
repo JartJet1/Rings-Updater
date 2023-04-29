@@ -237,10 +237,10 @@ while True:
         key = (obj['event'], obj['BodyID'], obj['SystemAddress'])
         if obj['timestamp'] == latest_timestamps[key]:
             filtered_data.append(obj)
-    with open('output_filtered.json', 'w') as f:
+    with open('output.json', 'w') as f:
         json.dump(filtered_data, f, indent=4)
     print("Faza 3")
-    x = 3000
+    x = 1000
     with open("output.json", 'r') as file:
         data = json.load(file)
     num_objects = len(data)
@@ -250,7 +250,7 @@ while True:
         response = None
         while response is None:
             try:
-                response = requests.post('https://secrectURL', data=json_data, headers=headers, timeout=300)
+                response = requests.post('https://apporsite.com/elitebase/bodies.php', data=json_data, headers=headers, timeout=300)
                 break
             except requests.exceptions.RequestException as e:
                 if isinstance(e, requests.exceptions.ConnectionError) or isinstance(e, ConnectionResetError):
@@ -275,7 +275,7 @@ while True:
             response = None
             while response is None:
                 try:
-                    response = requests.post('https://secrectURL', data=json_data, headers=headers, timeout=300)
+                    response = requests.post('https://apporsite.com/elitebase/bodies.php', data=json_data, headers=headers, timeout=300)
                     break
                 except requests.exceptions.RequestException as e:
                     if isinstance(e, requests.exceptions.ConnectionError) or isinstance(e, ConnectionResetError):
