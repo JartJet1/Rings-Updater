@@ -34,7 +34,7 @@ while True:
     x = 5
     new_objects = []
     num_objects = len(file_names)
-    print("Faza 1")
+    print("Przeszukiwanie dzienników")
     if num_objects <= x:
         for file_name in file_names:
             if os.path.getsize(os.path.join(folder_path, file_name)) == 0:
@@ -68,11 +68,16 @@ while True:
                                 else:
                                     obj = json.loads(line.strip())
                                     if 'Rings' in obj or 'StarPos' in obj or 'Signals' in obj or 'ProbesUsed' in obj:
-                                        if obj.get('event') == 'Scan' or obj.get('event') == 'SAASignalsFound' or obj.get('event') == 'SAAScanComplete' or obj.get('event') == 'Location':
+                                        if obj.get('event') == 'Scan' or obj.get('event') == 'SAASignalsFound' or obj.get('event') == 'SAAScanComplete' or obj.get('event') == 'Location' or obj.get('event') == 'FSDJump':
                                             if obj.get('event') == 'SAAScanComplete':
                                                 obj['Detailed'] = True
                                             if 'event' in obj and obj['event'] == 'SAAScanComplete' and 'BodyName' in obj and 'A Ring' not in obj['BodyName'] and 'B Ring' not in obj['BodyName']:
                                                 continue
+                                            obj.pop('FuelLevel', None)
+                                            obj.pop('FuelUsed', None)
+                                            obj.pop('JumpDist', None)
+                                            obj.pop('Docked', None)
+                                            obj.pop('Taxi', None)
                                             obj.pop('EfficiencyTarget', None)
                                             obj.pop('ProbesUsed', None)
                                             obj.pop('SRV', None)
@@ -166,11 +171,16 @@ while True:
                                     else:
                                         obj = json.loads(line.strip())
                                         if 'Rings' in obj or 'StarPos' in obj or 'Signals' in obj or 'ProbesUsed' in obj:
-                                            if obj.get('event') == 'Scan' or obj.get('event') == 'SAASignalsFound' or obj.get('event') == 'SAAScanComplete' or obj.get('event') == 'Location':
+                                            if obj.get('event') == 'Scan' or obj.get('event') == 'SAASignalsFound' or obj.get('event') == 'SAAScanComplete' or obj.get('event') == 'Location' or obj.get('event') == 'FSDJump':
                                                 if obj.get('event') == 'SAAScanComplete':
                                                     obj['Detailed'] = True
                                                 if 'event' in obj and obj['event'] == 'SAAScanComplete' and 'BodyName' in obj and 'A Ring' not in obj['BodyName'] and 'B Ring' not in obj['BodyName']:
                                                     continue
+                                                obj.pop('FuelLevel', None)
+                                                obj.pop('FuelUsed', None)
+                                                obj.pop('JumpDist', None)
+                                                obj.pop('Docked', None)
+                                                obj.pop('Taxi', None)
                                                 obj.pop('EfficiencyTarget', None)
                                                 obj.pop('ProbesUsed', None)
                                                 obj.pop('SRV', None)
@@ -225,7 +235,7 @@ while True:
                                 f.write(file_name + "\n")
         with open('output.json', 'w') as f:
             json.dump(new_objects, f, indent=4)
-    print("Faza 2")
+    print("Segregowanie danych")
     latest_timestamps = {}
     for obj in new_objects:
         key = (obj['event'], obj['BodyID'], obj['SystemAddress'])
@@ -239,7 +249,7 @@ while True:
             filtered_data.append(obj)
     with open('output.json', 'w') as f:
         json.dump(filtered_data, f, indent=4)
-    print("Faza 3")
+    print("Przesylanie danych")
     x = 1000
     with open("output.json", 'r') as file:
         data = json.load(file)
@@ -299,4 +309,5 @@ while True:
     for line in fileinput.input('files.txt', inplace=True):
         if not line.strip().endswith(latest_file):
             print(line.rstrip())
+    print("Koniec przesyłania. Oczekiwanie na kolejne pobranie danych")
     time.sleep(900)
