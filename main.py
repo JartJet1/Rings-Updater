@@ -1,3 +1,4 @@
+import sys
 import os
 import requests
 import json
@@ -5,48 +6,10 @@ import time
 import re
 import ijson
 import threading
-from datetime import datetime
-from tkinter import *
-from PIL import Image, ImageTk
-class Grip:
-    ''' Makes a window dragable. '''
-    def __init__ (self, parent, disable=None, releasecmd=None) :
-        self.parent = parent
-        self.root = parent.winfo_toplevel()
+from PyQt5.QtCore import Qt, QRect, QPoint, QRectF, QTimer
+from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont, QPalette, QIcon, QCursor, QRegion, QPainterPath, QBitmap, QPainter
+from PyQt5.QtWidgets import QApplication, QLabel, QPushButton, QDesktopWidget, QMainWindow, QVBoxLayout, QFrame
 
-        self.disable = disable
-        if type(disable) == 'str':
-            self.disable = disable.lower()
-
-        self.releaseCMD = releasecmd
-
-        self.parent.bind('<Button-1>', self.relative_position)
-        self.parent.bind('<ButtonRelease-1>', self.drag_unbind)
-
-    def relative_position (self, event) :
-        cx, cy = self.parent.winfo_pointerxy()
-        geo = self.root.geometry().split("+")
-        self.oriX, self.oriY = int(geo[1]), int(geo[2])
-        self.relX = cx - self.oriX
-        self.relY = cy - self.oriY
-
-        self.parent.bind('<Motion>', self.drag_wid)
-
-    def drag_wid (self, event) :
-        cx, cy = self.parent.winfo_pointerxy()
-        d = self.disable
-        x = cx - self.relX
-        y = cy - self.relY
-        if d == 'x' :
-            x = self.oriX
-        elif d == 'y' :
-            y = self.oriY
-        self.root.geometry('+%i+%i' % (x, y))
-
-    def drag_unbind (self, event) :
-        self.parent.unbind('<Motion>')
-        if self.releaseCMD != None :
-            self.releaseCMD()
 def date_handler(obj):
     if hasattr(obj, 'isoformat'):
         return obj.isoformat()
@@ -61,22 +24,57 @@ def merge_objects(merged_obj):
                 yield obj
             else:
                 yield obj
-def close_app():
-    root.destroy()
-class App:
-    def __init__(self, master):
-        self.master = master
-        self.label = Label(master, fg="white", bg="black", text="Press the button", font=("Arial", 10))
-        self.label.pack(padx=10, pady=10)
-        self.label.place(relx=0.5, rely=0.5, anchor="center")
-        self.button = Button(master, text="Press to start log upload", width="30", height="2", font=("Arial", 10), bg="#3ab542", fg="white", command=self.print_message, relief=FLAT, borderwidth=0, highlightthickness=0,)
-        self.button.config(activebackground='#319437', activeforeground='white')
-        self.button.pack(pady=10)
-        self.button.place(relx=0.5, rely=0.6, anchor="center")
+class AppClass(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        with open("files.txt", "r") as f:
+            self.dataold = f.read()
+        palette = self.palette()
+        palette.setBrush(QPalette.Background, QBrush(QPixmap("bg.png")))
+        self.setWindowIcon(QIcon('Rings.ico'))
+        self.setPalette(palette)
+        self.setWindowTitle("Rings Updater v1.0.0")
+        self.setGeometry(0, 0, 800, 450)
+        self.center()
+        self.setWindowFlag(Qt.FramelessWindowHint)
+        radius = 3
+        path = QPainterPath()
+        path.addRoundedRect(QRectF(self.rect()), radius, radius)
+        mask = QBitmap(self.size())
+        mask.clear()
+        painter = QPainter(mask)
+        painter.setRenderHint(QPainter.HighQualityAntialiasing)
+        painter.setBrush(Qt.black)
+        painter.drawPath(path)
+        painter.end()
+        region = QRegion(mask)
+        self.setMask(region)
+        self.frame = QFrame(self)
+        self.frame.setFrameShape(QFrame.NoFrame)
+        self.frameLayout = QVBoxLayout(self.frame)
 
+        self.label = QLabel("Press the button")
+        self.label.setFont(QFont("Arial", 12))
+        self.label.setAlignment(Qt.AlignCenter)
+        self.label.setStyleSheet("color: white; background-color: rgba(0,0,0,0.5); border-radius: 5px; padding:5 10px;")
+
+        self.frameLayout.addWidget(self.label)
+        self.frameLayout.setAlignment(Qt.AlignCenter)
+
+        self.setCentralWidget(self.frame)
+        self.button = QPushButton(self)
+        self.button.setGeometry(QRect(250, 250, 300, 30))
+        self.button.setStyleSheet("border: none; border-radius: 5px; background-color: #3ab542; color: white; font-size: 12px;")
+        self.button.setText("Press to start log upload")
+        self.button.setCursor(QCursor(Qt.PointingHandCursor))
+        self.button.enterEvent = lambda event: self.button.setStyleSheet('border: none; border-radius: 5px; background-color: #319437; color: white; font-size: 12px;')
+        self.button.leaveEvent = lambda event: self.button.setStyleSheet('border: none; border-radius: 5px;  background-color: #3ab542; color: white; font-size: 12px;')
+        self.button.clicked.connect(lambda: self.print_message())
     def update_text(self):
         file_name = ""
         while True:
+            with open("files.txt", "r") as f:
+                self.dataold = f.read()
             folder_path = os.path.expanduser('~/Saved Games/Frontier Developments/Elite Dangerous')
             folder_path = folder_path.replace('%username%', os.getlogin())
             file_names = [f for f in os.listdir(folder_path) if "Journal" in f and f.endswith(".log")]
@@ -89,7 +87,7 @@ class App:
             x = 5
             new_objects = []
             num_objects = len(file_names)
-            self.label.config(text="Searching logs")
+            self.label.setText("Searching logs")
             if num_objects <= x:
                 for file_name in file_names:
                     if os.path.getsize(os.path.join(folder_path, file_name)) == 0:
@@ -182,7 +180,7 @@ class App:
                                                         new_objects.append(obj)
                             if gameversionstatus == True:
                                 filetext = "Searching logs: {}".format(file_name)
-                                self.label.config(text=filetext)
+                                self.label.setText(filetext)
                                 with open("files.txt", "a") as f:
                                     f.write(file_name + "\n")
                             else:
@@ -288,7 +286,7 @@ class App:
                                                             new_objects.append(obj)
                                 if gameversionstatus == True:
                                     filetext = "Searching logs: {}".format(file_name)
-                                    self.label.config(text=filetext)
+                                    self.label.setText(filetext)
                                     with open("files.txt", "a") as f:
                                         f.write(file_name + "\n")
                                 else:
@@ -296,7 +294,7 @@ class App:
                                         f.write(file_name + "\n")
                 with open('output.json', 'w') as f:
                     json.dump(new_objects, f, indent=4)
-            self.label.config(text="Data sorting")
+            self.label.setText("Data sorting")
             latest_timestamps = {}
             for obj in new_objects:
                 key = (obj['event'], obj['BodyID'], obj['SystemAddress'])
@@ -310,7 +308,7 @@ class App:
                     filtered_data.append(obj)
             with open('output.json', 'w') as f:
                 json.dump(filtered_data, f, indent=4)
-            self.label.config(text="Data transfer")
+            self.label.setText("Data transfer")
             x = 100
             with open("output.json", 'r') as file:
                 data = json.load(file)
@@ -337,7 +335,7 @@ class App:
                         print("RequestException")
                         continue
                 tekstloop = 'Data transfer, {}'.format(response.text)
-                self.label.config(text=tekstloop)
+                self.label.setText(tekstloop)
             else:
                 num_parts = num_objects // x + (num_objects % x != 0)
                 for i in range(num_parts):
@@ -346,7 +344,7 @@ class App:
                     part_data = data[start_idx:end_idx]
                     json_data = json.dumps(part_data)
                     tekstloop = 'Uploading batches of data: {}'.format(num)
-                    self.label.config(text=tekstloop)
+                    self.label.setText(tekstloop)
                     headers = {'Content-type': 'application/json'}
                     response = None
                     timet = (int(num) + 1) * 10
@@ -367,7 +365,7 @@ class App:
                             print("RequestException")
                             continue
                     tekstloop = 'Uploading batches of data: {}, {}'.format(num, response.text)
-                    self.label.config(text=tekstloop)
+                    self.label.setText(tekstloop)
                     num = num + 1
                     time.sleep(30)
             folder_path = os.path.expanduser('~/Saved Games/Frontier Developments/Elite Dangerous')
@@ -384,38 +382,40 @@ class App:
                 for line in lines:
                     if not line.strip().endswith(latest_file):
                         f.write(line)
-            self.label.config(text="End of upload. I'm waiting for the next search")
+            self.label.setText("End of upload. I'm waiting for the next search")
             time.sleep(900)
-
     def print_message(self):
-        self.button.destroy()
-        self.button = Button(canvas, text="Press to exit", width="30", height="2", font=("Arial", 10), bg="#cc3939", fg="white", command=close_app, relief=FLAT, borderwidth=0, highlightthickness=0,)
-        self.button.config(activebackground='#7d2323', activeforeground='white')
-        self.button.pack(pady=10)
-        self.button.place(relx=0.5, rely=0.6, anchor="center")
-        self.update_thread = threading.Thread(target=self.update_text)
-        self.update_thread.daemon = True
-        self.update_thread.start()
-
-root = Tk()
-root.attributes('-fullscreen',True)
-root.title('Rings updater 1.0.0')
-root.wm_attributes('-transparentcolor', root['bg'])
-full = Frame(root)
-x = (root.winfo_screenwidth() - 800) / 2
-y = (root.winfo_screenheight() - 450) / 2
-full.pack(fill= BOTH, anchor="w", expand= True)
-image = Image.open("bg.png")
-photo = ImageTk.PhotoImage(image)
-infobox0 = Toplevel(full)
-infobox0.geometry('{}x{}+{}+{}'.format(image.width, image.height, int(x), int(y)))
-canvas = Canvas(infobox0, width=image.width, height=image.height, highlightthickness=0)
-canvas.create_image(0, 0, image=photo, anchor=NW)
-canvas.pack(fill=BOTH, expand=YES)
-infobox0.resizable(width=False, height=False)
-infobox0.attributes('-toolwindow',True)
-infobox0.overrideredirect(True)
-infobox0.minsize(800, 450)
-textinfo0_9_grip = Grip(canvas)
-app = App(canvas)
-root.mainloop()
+        self.button.deleteLater()
+        QTimer.singleShot(0, lambda: self.create_new_button())
+    def create_new_button(self):
+        self.button = QPushButton(self)
+        self.button.setGeometry(QRect(250, 250, 300, 30))
+        self.button.setStyleSheet("border: none; border-radius: 5px;  background-color: #cc3939; color: white; font-size: 12px;")
+        self.button.setText("Press to exit")
+        self.button.setCursor(QCursor(Qt.PointingHandCursor))
+        self.button.enterEvent = lambda event: self.button.setStyleSheet('border: none; border-radius: 5px; background-color: #7d2323; color: white; font-size: 12px;')
+        self.button.leaveEvent = lambda event: self.button.setStyleSheet('border: none; border-radius: 5px;  background-color: #cc3939; color: white; font-size: 12px;')
+        self.button.clicked.connect(lambda: self.close_app())
+        self.button.show()
+        threading.Thread(target=self.update_text).start()
+    def close_app(self):
+        with open('files.txt', 'w') as f:
+            f.write(str(self.dataold))
+        dataold = []
+        with open("output.json", "w") as f:
+            json.dump(dataold, f)
+        os._exit(0)
+    def center(self):
+        screen = QDesktopWidget().screenGeometry()
+        self.move((screen.width() - self.width()) // 2, (screen.height() - self.height()) // 2)
+    def mousePressEvent(self, event):
+        self.oldPos = event.globalPos()
+    def mouseMoveEvent(self, event):
+        delta = QPoint(event.globalPos() - self.oldPos)
+        self.move(self.x() + delta.x(), self.y() + delta.y())
+        self.oldPos = event.globalPos()
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = AppClass()
+    ex.show()
+    sys.exit(app.exec_())
