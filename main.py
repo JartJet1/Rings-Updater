@@ -322,7 +322,7 @@ class App:
                 response = None
                 while response is None:
                     try:
-                        response = requests.post('https://apporsite.com/elitebase/bodies.php', data=json_data, headers=headers, timeout=15)
+                        response = requests.post('https://apporsite.com/elitebase/bodies.php', data=json_data, headers=headers, timeout=30)
                         break
                     except requests.exceptions.HTTPError as errh:
                         print("HTTPError")
@@ -349,7 +349,7 @@ class App:
                     self.label.config(text=tekstloop)
                     headers = {'Content-type': 'application/json'}
                     response = None
-                    timet = (int(num) + 1) * 15
+                    timet = (int(num) + 1) * 30
                     while response is None:
                         try:
                             response = requests.post('https://apporsite.com/elitebase/bodies.php', data=json_data, headers=headers, timeout=timet)
