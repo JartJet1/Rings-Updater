@@ -311,7 +311,7 @@ class App:
             with open('output.json', 'w') as f:
                 json.dump(filtered_data, f, indent=4)
             self.label.config(text="Data transfer")
-            x = 300
+            x = 100
             with open("output.json", 'r') as file:
                 data = json.load(file)
             num_objects = len(data)
@@ -322,7 +322,7 @@ class App:
                 response = None
                 while response is None:
                     try:
-                        response = requests.post('https://apporsite.com/elitebase/bodies.php', data=json_data, headers=headers, timeout=30)
+                        response = requests.post('https://apporsite.com/elitebase/bodies.php', data=json_data, headers=headers, timeout=10)
                         break
                     except requests.exceptions.HTTPError as errh:
                         print("HTTPError")
@@ -349,7 +349,7 @@ class App:
                     self.label.config(text=tekstloop)
                     headers = {'Content-type': 'application/json'}
                     response = None
-                    timet = (int(num) + 1) * 30
+                    timet = (int(num) + 1) * 10
                     while response is None:
                         try:
                             response = requests.post('https://apporsite.com/elitebase/bodies.php', data=json_data, headers=headers, timeout=timet)
